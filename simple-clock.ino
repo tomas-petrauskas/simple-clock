@@ -11,6 +11,10 @@
 #define CLK 9
 #define DIO 8
 
+// Define Buttons
+const int buttonMinutes = A1;  // Define the pin for the button connected to A1
+const int buttonHours = A2;  // Define the pin for the button connected to A2
+
 // Change to "true" if you want Arduino to output time to serial port
 #define SERIAL_DEBUG true
 
@@ -25,6 +29,9 @@ TimeChangeRule CET = {"CET", Last, Sun, Oct, 4, 120};    // Central European Tim
 Timezone tz(CEST, CET);
 
 void setup() {
+
+  pinMode(buttonMinutes, INPUT); // Set A1 pin as an input
+  pinMode(buttonHours, INPUT); // Set A2 pin as an input
 
   // Configure 7 Segment Display
   display.setBrightness(7);
@@ -48,6 +55,20 @@ void setup() {
 }
 
 void loop() {
+  int buttonStateMinutes = digitalRead(buttonMinutes);
+  int buttonStateHours = digitalRead(buttonHours);
+
+  if (buttonStateMinutes == HIGH) {
+    Serial.println("Button connected to A1 is pressed.");
+    rtc.adjust(rtc.now() + TimeSpan(0, 0, 1, 0)); // Add 1 minute
+  }
+
+  // Check the state of the button connected to A2
+  if (buttonStateHours == HIGH) {
+    Serial.println("Button connected to A2 is pressed.");
+    rtc.adjust(rtc.now() + TimeSpan(0, 1, 0, 0)); // Add 1 hour
+  }
+
   // Get current date and time in UTC
   DateTime rtcDateTime = rtc.now();
 
@@ -61,11 +82,30 @@ void loop() {
   DateTime utcDateTime = DateTime(utcTime);
   
   // Create Integer for 7 Segment Display (Local Time)
-  int displayLocalTime = (localDateTime.hour() * 100) + localDateTime.minute();
+  //int displayLocalTime = (localDateTime.hour() * 100) + localDateTime.minute();
 
-  // Output Current time to 7 Segment Display (Local Time)
-  display.showNumberDec(displayLocalTime);
-  
+  // Extract the hours and minutes
+  int hours = localDateTime.hour();
+  int minutes = localDateTime.minute();
+
+  uint8_t segments[4];
+
+  // Convert hours to 7-segment representation
+  if (hours >= 10) {
+    segments[0] = display.encodeDigit(hours / 10);  // Tens of hours
+  } else {
+    segments[0] = 0;  // Leave the segment blank
+  }
+  segments[1] = display.encodeDigit(hours % 10);  // Units of hours
+
+  // Convert minutes to 7-segment representation
+  segments[2] = display.encodeDigit(minutes / 10);  // Tens of minutes
+  segments[3] = display.encodeDigit(minutes % 10);  // Units of minutes
+
+  // Display the hour and minute segments
+  display.setSegments(segments);
+
+
   if (SERIAL_DEBUG) {
     // Create strings for Terminal
     String displayLocalTimeString = String(localDateTime.hour()) + ":" + String(localDateTime.minute()) + ":" + String(localDateTime.second());
@@ -79,5 +119,5 @@ void loop() {
   }
   
   // Wait 1 second
-  delay(1000);
+  delay(500);
 }
