@@ -12,8 +12,10 @@
 #define DIO 8
 
 // Define Buttons
-const int buttonMinutes = A1;  // Define the pin for the button connected to A1
-const int buttonHours = A2;  // Define the pin for the button connected to A2
+const int buttonDecrease = A1;  // Define the pin for the button connected to A1
+const int buttonIncrease = A2;  // Define the pin for the button connected to A2
+
+//////////// DEBUGING ///////////////
 
 // Change to "true" if you want Arduino to output time to serial port
 #define SERIAL_DEBUG true
@@ -29,9 +31,8 @@ TimeChangeRule CET = {"CET", Last, Sun, Oct, 4, 120};    // Central European Tim
 Timezone tz(CEST, CET);
 
 void setup() {
-
-  pinMode(buttonMinutes, INPUT); // Set A1 pin as an input
-  pinMode(buttonHours, INPUT); // Set A2 pin as an input
+  pinMode(buttonDecrease, INPUT); // Set A1 pin as an input
+  pinMode(buttonIncrease, INPUT); // Set A2 pin as an input
 
   // Configure 7 Segment Display
   display.setBrightness(7);
@@ -48,28 +49,42 @@ void setup() {
     while (1);
   }
 
+  //////////// CONFIGURATION //////////
   // These lines contains 2 time points which are 10 seconds before Daylight Saving event
-  // If you want to adjust current RTC date, uncomment one of these lines:
   // rtc.adjust(DateTime(2023, 10, 29, 0, 59, 50));
   // rtc.adjust(DateTime(2024, 3, 31, 0, 59, 50));
+  // If you want to adjust current RTC date, uncomment this line:
+  // rtc.adjust(DateTime(2023, 10, 8, 12, 15, 0));
 }
 
 void loop() {
-  int buttonStateMinutes = digitalRead(buttonMinutes);
-  int buttonStateHours = digitalRead(buttonHours);
+  /////////////// Time Adjustment BEGIN  ////////////////
 
-  if (buttonStateMinutes == HIGH) {
+  // Get current date and time
+  DateTime tempRtcDateTime = rtc.now();
+  time_t tempRtcTime = tempRtcDateTime.unixtime();
+  DateTime tempUtcDateTime = DateTime(tempRtcTime);
+
+  // Get button states
+  int buttonStateDecrease = digitalRead(buttonDecrease);
+  int buttonStateIncrease = digitalRead(buttonIncrease);
+
+  if (buttonStateDecrease == HIGH) {
     Serial.println("Button connected to A1 is pressed.");
-    rtc.adjust(rtc.now() + TimeSpan(0, 0, 1, 0)); // Add 1 minute
+    // Subtract 1 minute and set seconds to 0
+    rtc.adjust(DateTime(tempUtcDateTime.year(), tempUtcDateTime.month(), tempUtcDateTime.day(), tempUtcDateTime.hour(), tempUtcDateTime.minute() - 1, 0));
   }
 
   // Check the state of the button connected to A2
-  if (buttonStateHours == HIGH) {
+  if (buttonStateIncrease == HIGH) {
     Serial.println("Button connected to A2 is pressed.");
-    rtc.adjust(rtc.now() + TimeSpan(0, 1, 0, 0)); // Add 1 hour
+    // Add 1 minute and set seconds to 0
+    rtc.adjust(DateTime(tempUtcDateTime.year(), tempUtcDateTime.month(), tempUtcDateTime.day(), tempUtcDateTime.hour(), tempUtcDateTime.minute() + 1, 0)); 
   }
 
-  // Get current date and time in UTC
+  /////////////// Time Adjustment END  ////////////////
+
+  // Get current date and time
   DateTime rtcDateTime = rtc.now();
 
   // Convert UTC time to Europe/Vilnius time
@@ -81,9 +96,6 @@ void loop() {
   DateTime localDateTime = DateTime(localTime);
   DateTime utcDateTime = DateTime(utcTime);
   
-  // Create Integer for 7 Segment Display (Local Time)
-  //int displayLocalTime = (localDateTime.hour() * 100) + localDateTime.minute();
-
   // Extract the hours and minutes
   int hours = localDateTime.hour();
   int minutes = localDateTime.minute();
@@ -105,7 +117,6 @@ void loop() {
   // Display the hour and minute segments
   display.setSegments(segments);
 
-
   if (SERIAL_DEBUG) {
     // Create strings for Terminal
     String displayLocalTimeString = String(localDateTime.hour()) + ":" + String(localDateTime.minute()) + ":" + String(localDateTime.second());
@@ -118,6 +129,6 @@ void loop() {
     Serial.println();
   }
   
-  // Wait 1 second
+  // Wait 0.5 second
   delay(500);
 }
