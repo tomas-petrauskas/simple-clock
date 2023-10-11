@@ -73,6 +73,7 @@ void loop() {
   // Get button states
   int buttonStateDecrease = digitalRead(buttonDecrease);
   int buttonStateIncrease = digitalRead(buttonIncrease);
+  int buttonStateZero = digitalRead(buttonZero);
 
   if (buttonStateDecrease == HIGH) {
     Serial.println("Button connected to A1 is pressed.");
