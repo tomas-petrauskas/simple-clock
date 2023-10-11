@@ -14,6 +14,7 @@
 // Define Buttons
 const int buttonDecrease = A1;  // Define the pin for the button connected to A1
 const int buttonIncrease = A2;  // Define the pin for the button connected to A2
+const int buttonZero = A3;  // Define the pin for the button connected to A3
 
 //////////// DEBUGING ///////////////
 
@@ -33,6 +34,7 @@ Timezone tz(CEST, CET);
 void setup() {
   pinMode(buttonDecrease, INPUT); // Set A1 pin as an input
   pinMode(buttonIncrease, INPUT); // Set A2 pin as an input
+  pinMode(buttonZero, INPUT); // Set A3 pin as an input
 
   // Configure 7 Segment Display
   display.setBrightness(7);
@@ -85,6 +87,13 @@ void loop() {
     rtc.adjust(DateTime(tempUtcDateTime.year(), tempUtcDateTime.month(), tempUtcDateTime.day(), tempUtcDateTime.hour(), tempUtcDateTime.minute() + 1, 0)); 
   }
 
+  // Check the state of the button connected to A3
+  if (buttonStateZero == HIGH) {
+    Serial.println("Button connected to A3 is pressed.");
+    // Set seconds to 0
+    rtc.adjust(DateTime(tempUtcDateTime.year(), tempUtcDateTime.month(), tempUtcDateTime.day(), tempUtcDateTime.hour(), tempUtcDateTime.minute(), 0));
+  }
+  
   /////////////// Time Adjustment END  ////////////////
 
   // Toggle the colon every loop cycle
