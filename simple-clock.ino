@@ -57,6 +57,9 @@ void setup() {
   // rtc.adjust(DateTime(2023, 10, 8, 12, 15, 0));
 }
 
+// colon value for toggling
+bool colonOn = true;
+
 void loop() {
   /////////////// Time Adjustment BEGIN  ////////////////
 
@@ -84,6 +87,9 @@ void loop() {
 
   /////////////// Time Adjustment END  ////////////////
 
+  // Toggle the colon every loop cycle
+  colonOn = !colonOn;
+  
   // Get current date and time
   DateTime rtcDateTime = rtc.now();
 
@@ -111,7 +117,16 @@ void loop() {
   segments[1] = display.encodeDigit(hours % 10);  // Units of hours
 
   // Convert minutes to 7-segment representation
-  segments[2] = display.encodeDigit(minutes / 10);  // Tens of minutes
+  
+  // Set the colon state based on the toggle
+  if (colonOn) {
+    // Turn the colon on
+    segments[2] = display.encodeDigit(minutes / 10) | 0b01000000; // Tens of minutes with colon
+  } else {
+    // Turn the colon off
+    segments[2] = display.encodeDigit(minutes / 10) & ~0b01000000; // Tens of minutes with colon turned off
+  }
+  
   segments[3] = display.encodeDigit(minutes % 10);  // Units of minutes
 
   // Display the hour and minute segments
